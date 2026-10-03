@@ -1,0 +1,30 @@
+# 자격증명 & 설정 (절대 커밋 금지)
+config.ini
+web_config.json
+web_config.json.v1.bak
+web_config.json.*.tmp
+.env
+
+# 로그
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.runtime/
+
+# 빌드 산출물
+build/
+dist/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+
+# 로컬 도구 설정
+.claude/

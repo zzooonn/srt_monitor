@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f5f5">
+  <title>고속철도 모니터 · Rail Monitor</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script type="module" src="/assets/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#journey">여정 설정으로 이동</a>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Rail Monitor 홈"><span>RAIL<span class="brand-light"> MONITOR</span></span></a>
+    <div class="connection-pill"><span class="connection-dot" id="server-dot"></span><span id="server-state">서버 확인 중</span></div>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div><h1 id="page-title">고속철도 모니터</h1><p class="intro-copy">여정과 좌석 조건을 설정하고 예약 상황을 확인하세요.</p></div>
+    </section>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <div id="action-error" class="notice error-notice" role="alert" tabindex="-1" hidden></div>
+    <div id="migration-notice" class="notice" hidden></div>
+    <section id="uncertainty" class="uncertainty" aria-labelledby="uncertainty-title" hidden>
+      <div class="uncertainty-mark" aria-hidden="true">!</div><div><p class="eyebrow">확인 후에만 다시 시작할 수 있어요</p><h2 id="uncertainty-title">예약 결과를 직접 확인해 주세요.</h2><p id="uncertainty-help"></p><p>확인 전에는 추가 예약을 막습니다. 중지해도 이 상태는 유지됩니다.</p><div class="confirmation-actions"><button type="button" id="resolve-found" class="button dark">예약 있음 · 확인 완료</button><button type="button" id="resolve-missing" class="button outline">예약 없음 · 확인 완료</button></div></div>
+    </section>
+    <div class="workspace">
+      <form id="config-form" novalidate>
+        <fieldset id="editable" disabled>
+          <section class="panel journey-panel" id="journey" aria-labelledby="journey-title">
+            <div class="section-heading"><div><h2 id="journey-title">여정 설정</h2></div></div>
+            <div class="station-route">
+              <div class="field"><label for="departure_station-search">출발역</label>
+                <div class="station-picker"><input type="hidden" id="departure_station" name="departure_station"><div class="station-input"><input id="departure_station-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="departure_station-list" aria-haspopup="listbox" aria-describedby="station-help favorites-help" autocomplete="off" placeholder="출발역 선택" disabled><button type="button" class="station-toggle" aria-label="출발역 목록 열기" tabindex="-1" disabled>⌄</button></div><div id="departure_station-popup" class="station-popup" hidden><div id="departure_station-list" class="station-list" role="listbox" aria-label="출발역 목록"></div><p id="departure_station-empty" class="station-empty" role="status"></p></div></div>
+              </div>
+              <button type="button" id="swap-stations" class="swap-button" aria-label="출발역과 도착역 바꾸기">⇄</button>
+              <div class="field"><label for="arrival_station-search">도착역</label>
+                <div class="station-picker"><input type="hidden" id="arrival_station" name="arrival_station"><div class="station-input"><input id="arrival_station-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="arrival_station-list" aria-haspopup="listbox" aria-describedby="station-help favorites-help" autocomplete="off" placeholder="도착역 선택" disabled><button type="button" class="station-toggle" aria-label="도착역 목록 열기" tabindex="-1" disabled>⌄</button></div><div id="arrival_station-popup" class="station-popup" hidden><div id="arrival_station-list" class="station-list" role="listbox" aria-label="직통 가능 도착역 목록"></div><p id="arrival_station-empty" class="station-empty" role="status"></p></div></div>
+              </div>
+            </div>
+            <p class="helper" id="station-help">출발역을 선택하면 직통으로 갈 수 있는 도착역만 표시합니다. 역 이름을 입력해 검색하고 목록에서 선택하세요.</p>
+            <p class="helper station-meta" id="station-source"></p>
+            <p class="helper station-meta" id="favorites-help">☆를 눌러 즐겨찾기를 등록하세요. 즐겨찾기는 이 브라우저에 저장됩니다.</p>
+            <p class="station-feedback" id="station-notice" role="status" aria-live="polite" hidden></p>
+            <p class="station-feedback" id="favorites-notice" role="status" aria-live="polite" hidden></p>
+            <div class="three-columns date-row"><div class="field"><label for="departure_date">출발 날짜</label><input id="departure_date" name="departure_date" type="date" required></div><div class="field"><label for="departure_time">첫 출발 시간</label><select id="departure_time" name="departure_time" required></select></div><div class="field"><label for="max_departure_time">마지막 출발 시간</label><select id="max_departure_time" name="max_departure_time" required></select></div></div>
+          </section>
+          <section class="panel" aria-labelledby="passenger-title">
+            <div class="section-heading"><div><h2 id="passenger-title">승객과 좌석</h2></div><span id="passenger-total" class="count-pill">— 명</span></div>
+            <div class="passenger-grid"><div class="field"><label for="adult_count">어른</label><input id="adult_count" name="adult_count" type="number" min="0" max="4" step="1" required></div><div class="field"><label for="child_count">어린이</label><input id="child_count" name="child_count" type="number" min="0" max="4" step="1" required></div><div class="field"><label for="senior_count">경로</label><input id="senior_count" name="senior_count" type="number" min="0" max="4" step="1" required></div><div class="field"><label for="disability_1_to_3_count">중증 장애인<span class="label-sub">기존 1–3급</span></label><input id="disability_1_to_3_count" name="disability_1_to_3_count" type="number" min="0" max="4" step="1" required></div><div class="field"><label for="disability_4_to_6_count">경증 장애인<span class="label-sub">기존 4–6급</span></label><input id="disability_4_to_6_count" name="disability_4_to_6_count" type="number" min="0" max="4" step="1" required></div></div>
+            <p class="helper" id="passenger-help">승객은 모두 합해 1~4명까지 설정할 수 있어요.</p>
+            <div class="seat-class" role="group" aria-label="좌석 종류"><label class="selection-card"><input id="check_normal" name="check_normal" type="checkbox"><span><strong>일반실</strong><small>편안한 기본 좌석</small></span></label><label class="selection-card"><input id="check_special" name="check_special" type="checkbox"><span><strong>특실</strong><small>여유 있는 여행</small></span></label></div>
+            <div class="preference-grid"><label class="check-label"><input id="require_same_car" name="require_same_car" type="checkbox">같은 호차 필수</label><label class="check-label"><input id="require_same_row" name="require_same_row" type="checkbox">같은 줄 필수</label><label class="check-label"><input id="require_adjacent_seats" name="require_adjacent_seats" type="checkbox">붙어 있는 좌석 필수</label><label class="check-label"><input id="prefer_window_seat" name="prefer_window_seat" type="checkbox">창가 우선</label><label class="check-label"><input id="require_window_seat" name="require_window_seat" type="checkbox">창가 필수</label></div>
+            <div class="info-note" id="seat-verification-help">코레일 연결은 예약 인원은 확인할 수 있지만 좌석 위치가 응답에 없을 수 있어요. 같은 호차·같은 줄·연석·창가 필수 조건을 확인할 수 없으면 예약을 유지하고 직접 확인을 요청합니다. 창가 우선은 보장되지 않습니다.</div>
+          </section>
+          <section class="panel" aria-labelledby="policy-title">
+            <div class="section-heading"><div><h2 id="policy-title">예약 방식</h2></div></div>
+            <div class="mode-grid"><label class="selection-card"><input name="reservation_mode" id="notification-only" type="radio" value="notify"><span><strong>알림만 받기</strong><small>좌석 발견 시 알림</small></span></label><label class="selection-card"><input name="reservation_mode" id="auto-reserve" type="radio" value="reserve"><span><strong>자동 예약</strong><small>조건에 맞으면 예약 시도</small></span></label></div>
+            <div id="disability-note" class="info-note warm" hidden>현재 코레일 연결은 장애인 운임 자동 예약을 지원하지 않습니다. 장애인 승객이 있으면 ‘알림만 받기’를 선택해 주세요.</div>
+            <div class="policy-row"><div class="field"><label for="max_reservations">목표 예약 수</label><input id="max_reservations" name="max_reservations" type="number" min="1" max="20" required><small class="helper">예약 건수 기준 · 1~20건</small></div><div class="policy-checks"><label class="check-label"><input id="auto_cancel_if_seat_mismatch" name="auto_cancel_if_seat_mismatch" type="checkbox">확인된 좌석 조건 불일치 시 자동 취소</label><label class="check-label"><input id="notify_if_seat_mismatch" name="notify_if_seat_mismatch" type="checkbox">좌석 조건 불일치 알림 받기</label></div></div>
+            <p class="helper">자동 예약은 결제 완료를 의미하지 않습니다. 예약 내역과 결제 기한을 직접 확인해 주세요.</p>
+          </section>
+          <section class="panel" aria-labelledby="account-title">
+            <div class="section-heading"><div><h2 id="account-title">계정 연결</h2></div></div>
+            <div class="account-heading"><h3>코레일 통합 계정</h3><span id="korail-account-state" class="status-tag">확인 중</span></div>
+            <p class="helper">코레일+ 통합 운행 기준으로 조회합니다. 실제 계정 연결과 조회 가능한 구간은 시작 후 확인합니다.</p>
+            <div class="two-columns"><div class="field"><label for="korail_id">코레일 계정</label><input id="korail_id" name="korail_id" autocomplete="off" placeholder="새로 설정할 때 입력"><small data-secret-status="korail_id">설정 여부 확인 중</small></div><div class="field"><label for="korail_password">코레일 비밀번호</label><input id="korail_password" name="korail_password" type="password" autocomplete="new-password" placeholder="변경할 때만 입력"><small data-secret-status="korail_password">설정 여부 확인 중</small></div></div>
+            <p class="helper">입력란을 비우면 저장된 값을 유지합니다. 저장이 완료되면 입력한 비밀 값은 화면에서 비웁니다.</p>
+            <details class="settings-details"><summary>텔레그램 알림 <span>선택</span></summary><div class="details-content"><p class="helper">알림을 받으려면 봇 토큰과 채팅 ID를 모두 설정하세요.</p><div class="two-columns"><div class="field"><label for="telegram_bot_token">봇 토큰</label><input id="telegram_bot_token" name="telegram_bot_token" type="password" autocomplete="new-password" placeholder="변경할 때만 입력"><small data-secret-status="telegram_bot_token">설정 여부 확인 중</small></div><div class="field"><label for="telegram_chat_id">채팅 ID</label><input id="telegram_chat_id" name="telegram_chat_id" autocomplete="off" placeholder="변경할 때만 입력"><small data-secret-status="telegram_chat_id">설정 여부 확인 중</small></div></div></div></details>
+            <details class="settings-details" id="advanced-settings"><summary>고급 설정 <span>조회 주기 · 좌석 배치 · 이전 연결</span></summary><div class="details-content">
+              <div class="two-columns"><div class="field"><label for="poll_interval">조회 간격 (초)</label><input id="poll_interval" name="poll_interval" type="number" min="10" max="600" required></div><div class="field"><label for="heartbeat_interval">생존 알림 간격 (초)</label><input id="heartbeat_interval" name="heartbeat_interval" type="number" min="60" max="86400" required></div></div>
+              <div class="three-columns layout-fields"><div class="field"><label for="seat_column_order">좌석 열 순서</label><input id="seat_column_order" name="seat_column_order" placeholder="예: ABCD" required></div><div class="field"><label for="adjacent_seat_pairs">붙어 있는 좌석 쌍</label><input id="adjacent_seat_pairs" name="adjacent_seat_pairs" placeholder="예: AB, CD"></div><div class="field"><label for="window_seat_letters">창가 좌석 열</label><input id="window_seat_letters" name="window_seat_letters" placeholder="예: A, D"></div></div><p class="helper">좌석 쌍과 창가 열은 쉼표로 구분합니다. 열차마다 배치가 다르며, 응답에 위치가 없으면 확인이 필요합니다.</p>
+              <div class="legacy-connection"><div class="field"><label for="connection_mode">조회 연결</label><select id="connection_mode" name="connection_mode"><option value="korail">코레일 연결 (기본)</option><option value="legacy_srt">이전 SRT 연결</option></select></div><p class="helper">이전 SRT 연결은 직접 선택할 때만 사용합니다. 코레일 계정을 대신 사용하지 않습니다.</p><div id="legacy-account" hidden><h3>이전 SRT 계정</h3><div class="two-columns"><div class="field"><label for="srt_id">SRT 계정</label><input id="srt_id" name="srt_id" autocomplete="off" placeholder="새로 설정할 때 입력"><small data-secret-status="srt_id">설정 여부 확인 중</small></div><div class="field"><label for="srt_password">SRT 비밀번호</label><input id="srt_password" name="srt_password" type="password" autocomplete="new-password" placeholder="변경할 때만 입력"><small data-secret-status="srt_password">설정 여부 확인 중</small></div></div></div></div>
+            </div></details>
+          </section>
+        </fieldset>
+        <div class="save-bar"><p id="edit-state">저장된 설정 불러오는 중</p><div><button type="button" id="restore" class="button text-button" disabled>저장값 복원</button><button type="submit" id="save" class="button outline" disabled>설정 저장</button></div></div>
+      </form>
+      <aside class="monitor-column" aria-label="실행 요약">
+        <section class="monitor-card"><div class="ticket-top"><h2>실행 요약</h2></div><div class="summary-route"><strong id="summary-departure">—</strong><span aria-hidden="true">→</span><strong id="summary-arrival">—</strong></div><p id="summary-date" class="summary-date">저장된 여정을 불러오는 중</p><div class="summary-meta"><div><span>승객 / 좌석</span><strong id="summary-passengers">—</strong></div><div><span>실행 방식</span><strong id="summary-mode">—</strong></div></div><div class="live-status"><span class="phase-dot" id="phase-dot"></span><span id="phase-label">상태 확인 중</span><span id="running-label"></span></div><p id="status-message" class="status-message">실제 서버 응답을 기다리고 있습니다.</p><dl class="status-metrics"><div><dt>예약 완료</dt><dd><span id="reserved-count">—</span><small id="reserved-goal"></small></dd></div><div><dt>최근 조회</dt><dd id="last-checked">—</dd></div><div><dt>실행 연결</dt><dd id="active-connection">—</dd></div></dl><p id="monitor-error" class="monitor-error" hidden></p><p id="run-lock-note" class="run-lock-note" hidden>실행 중에는 설정을 편집할 수 없습니다. 변경하려면 먼저 중지하세요.</p><button type="button" id="start" class="button start-button" disabled>감시 시작 <span aria-hidden="true">→</span></button><button type="button" id="stop" class="button stop-button" disabled>감시 중지</button><p class="ticket-footnote">시작할 때 현재 설정과 입력한 계정을 저장합니다.</p></section>
+        <section class="connection-card"><span class="small-heading">실시간 이벤트 연결</span><strong id="stream-state">연결 대기</strong><p>이벤트 연결과 철도 감시 실행 상태는 별개입니다.</p><button type="button" id="refresh" class="refresh-button">상태 새로고침 <span aria-hidden="true">↻</span></button></section>
+      </aside>
+    </div>
+    <section class="panel events-panel" aria-labelledby="events-title"><div class="section-heading"><div><h2 id="events-title">감시 기록</h2></div><span id="events-count" class="section-caption">0개 이벤트</span></div><p id="event-fetch-state" class="helper">기록 불러오는 중</p><ol id="event-list" class="event-list" aria-label="최근 감시 이벤트"></ol><p id="events-empty" class="events-empty">기록을 불러오면 여기에 표시됩니다.</p></section>
+    <footer><span>RAIL MONITOR</span><p>개인용 고속철도 통합 모니터 · 공식 철도 서비스와 별개의 도구입니다.</p></footer>
+  </main>
+</body>
+</html>

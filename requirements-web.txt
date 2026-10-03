@@ -1,0 +1,8 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+requests>=2.31
+SRTrain>=2.6
+# Pin the existing project fork to the commit used for offline contract tests.
+# Installation and mock tests do not guarantee live railway API support.
+korail2 @ git+https://github.com/dhfhfk/korail2.git@4b134266fff097ea0fd54e9f760cb128b6c8f878
