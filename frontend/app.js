@@ -135,14 +135,14 @@ function updateControls() {
   }
   $('save').textContent = state.busy === 'save' ? '저장 중…' : '설정 저장';
   $('stop').textContent = state.busy === 'stop' ? '중지 요청 중…' : '감시 중지';
-  $('edit-state').textContent = !state.loaded ? '설정을 불러와야 저장할 수 있습니다.'
+  $('edit-state').textContent = !state.loaded ? '설정 불러오는 중'
     : running ? '실행 중 · 설정 편집 잠김'
-      : state.dirty ? '변경 사항이 있습니다. 시작할 때 저장됩니다.' : '저장된 설정을 표시하고 있습니다.';
+      : state.dirty ? '변경됨 · 시작 시 저장' : '저장됨';
 }
 
 function serverConnection(connected) {
   state.fresh = connected;
-  $('server-state').textContent = connected ? '로컬 서버 연결됨' : '서버 응답 확인 필요';
+  $('server-state').textContent = connected ? '연결됨' : '서버 응답 확인 필요';
   $('server-dot').className = `connection-dot ${connected ? 'connected' : 'failed'}`;
   updateControls();
 }
@@ -195,7 +195,6 @@ function fillConfig(config) {
   $('adjacent_seat_pairs').value = config.adjacent_seat_pairs.join(', ');
   $('window_seat_letters').value = config.window_seat_letters.join(', ');
   $('advanced-settings').open = config.connection_mode === 'legacy_srt';
-  displayMessage('migration-notice', config.migration_notice || '');
   state.dirty = Boolean(reconcileStations('load'));
   updateSummary();
 }
@@ -204,9 +203,9 @@ function updateSecretStatus(secrets) {
   state.secrets = secrets;
   for (const name of secretFields) {
     const configured = secrets[`${name}_set`];
-    document.querySelector(`[data-secret-status="${name}"]`).textContent = configured ? '저장됨 · 빈칸으로 두면 유지' : '아직 설정되지 않았습니다.';
+    document.querySelector(`[data-secret-status="${name}"]`).textContent = configured ? '저장됨' : '미설정';
   }
-  $('korail-account-state').textContent = secrets.korail_id_set && secrets.korail_password_set ? '저장된 계정 있음' : '계정 설정 필요';
+  $('korail-account-state').textContent = secrets.korail_id_set && secrets.korail_password_set ? '계정 저장됨' : '계정 설정 필요';
 }
 
 function updateSummary() {
@@ -405,13 +404,13 @@ function renderEvents() {
   $('event-list').replaceChildren(fragment);
   $('events-count').textContent = `${state.events.size}개 이벤트`;
   $('events-empty').hidden = state.events.size > 0;
-  $('events-empty').textContent = '아직 감시 기록이 없습니다. 실제 이벤트가 발생하면 여기에 표시됩니다.';
+  $('events-empty').textContent = '아직 감시 기록이 없습니다.';
 }
 
 async function fetchEvents() {
   try {
     addEvents(await api.events());
-    $('event-fetch-state').textContent = `기록 동기화 ${new Date().toLocaleTimeString('ko-KR', { hour12: false })} · 최근 300개까지 표시`;
+    $('event-fetch-state').textContent = `동기화 ${new Date().toLocaleTimeString('ko-KR', { hour12: false })}`;
   } catch (error) {
     $('event-fetch-state').textContent = `기록 동기화 실패 · ${error.message}`;
     if (!state.events.size) $('events-empty').textContent = '기록을 불러오지 못했습니다. 상태 새로고침으로 다시 확인해 주세요.';
